@@ -1,0 +1,35 @@
+FROM jenkins/jenkins:lts-jdk21
+USER root
+
+# Install system dependencies, python, pip, ssh client, and utilities
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    python3 \
+    python3-pip \
+    sshpass \
+    openssh-client \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI (so local Jenkins can build images on the host machine)
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && apt-get install -y docker-ce-cli && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (v20) & npm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Ansible
+RUN apt-get update && apt-get install -y ansible && \
+    rm -rf /var/lib/apt/lists/*
+
+# Return to jenkins user
+USER jenkins
