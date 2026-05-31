@@ -7,42 +7,57 @@
     docker_image_prefix: "sujalainapure/ai-resume-analyzer"
 
   tasks:
-    - name: Update apt cache and install system dependencies
+    - name: Update apt cache and install system dependencies (Debian)
       apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
-          - git
+        name: [apt-transport-https, ca-certificates, curl, gnupg, lsb-release, git]
         state: present
         update_cache: yes
+      when: ansible_os_family == "Debian"
 
-    - name: Add Docker's official GPG key
+    - name: Install dependencies (RedHat/Amazon Linux)
+      yum:
+        name: [curl, git]
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Add Docker's official GPG key (Debian)
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
+      when: ansible_os_family == "Debian"
 
-    - name: Set up Docker stable repository
+    - name: Set up Docker stable repository (Debian)
       apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
         state: present
+      when: ansible_os_family == "Debian"
 
-    - name: Install Docker Engine & CLI
+    - name: Install Docker (Debian)
       apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
+        name: [docker-ce, docker-ce-cli, containerd.io]
         state: present
         update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker (RedHat/Amazon Linux)
+      yum:
+        name: docker
+        state: present
+      when: ansible_os_family == "RedHat"
 
     - name: Ensure Docker service is started and enabled
       service:
         name: docker
         state: started
         enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+      when: ansible_os_family == "RedHat"
 
     - name: Install Docker Compose
       get_url:

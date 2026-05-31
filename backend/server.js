@@ -217,6 +217,33 @@ app.post('/api/devops/config', (req, res) => {
     const currentConfig = readJson(DEVOPS_CONFIG);
     const newConfig = { ...currentConfig, ...req.body };
     writeJson(DEVOPS_CONFIG, newConfig);
+    
+    // Propagate IP address updates to inventory.ini and Jenkinsfile dynamically
+    if (req.body.awsHost) {
+        const inventoryPath = path.join(__dirname, '..', 'devops', 'ansible', 'inventory.ini');
+        const jenkinsfilePath = path.join(__dirname, '..', 'devops', 'jenkins', 'Jenkinsfile');
+        
+        if (fs.existsSync(inventoryPath)) {
+            try {
+                let content = fs.readFileSync(inventoryPath, 'utf8');
+                content = content.replace(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g, req.body.awsHost);
+                fs.writeFileSync(inventoryPath, content, 'utf8');
+            } catch (err) {
+                console.error('Failed to update inventory.ini:', err.message);
+            }
+        }
+        
+        if (fs.existsSync(jenkinsfilePath)) {
+            try {
+                let content = fs.readFileSync(jenkinsfilePath, 'utf8');
+                content = content.replace(/(TARGET_AWS_HOST\s*=\s*['"])\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(['"])/g, `$1${req.body.awsHost}$2`);
+                fs.writeFileSync(jenkinsfilePath, content, 'utf8');
+            } catch (err) {
+                console.error('Failed to update Jenkinsfile:', err.message);
+            }
+        }
+    }
+    
     res.json({ success: true, config: newConfig });
 });
 
