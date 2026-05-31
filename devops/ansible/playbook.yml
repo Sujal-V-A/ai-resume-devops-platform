@@ -4,7 +4,7 @@
   become: yes
   vars:
     project_dir: /opt/ai_resume_analyzer
-    docker_image_prefix: "my-docker-hub-username/ai-resume-analyzer"
+    docker_image_prefix: "sujalainapure/ai-resume-analyzer"
 
   tasks:
     - name: Update apt cache and install system dependencies
