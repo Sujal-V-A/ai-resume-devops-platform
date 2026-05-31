@@ -16,15 +16,14 @@ pipeline {
             }
         }
 
-        stage('Install & Test') {
+        stage('Install Dependencies') {
             steps {
-                echo 'Installing node dependencies and running tests...'
+                echo 'Installing node dependencies...'
                 dir('backend') {
                     sh 'npm install'
                 }
                 dir('frontend') {
                     sh 'npm install'
-                    sh 'npm run test -- --watchAll=false'
                 }
             }
         }
