@@ -23,7 +23,7 @@ services:
     depends_on:
       - ai-service
     volumes:
-      - backend-data:/app
+      - backend-data:/app/uploads
     networks:
       - app-network
 
