@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: sujalainapure/ai-resume-analyzer-frontend:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    image: sujalainapure/ai-resume-analyzer-backend:latest
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+    depends_on:
+      - ai-service
+    volumes:
+      - backend-data:/app
+    networks:
+      - app-network
+
+  ai-service:
+    image: sujalainapure/ai-resume-analyzer-ai-service:latest
+    ports:
+      - "5050:5050"
+    networks:
+      - app-network
+
+volumes:
+  backend-data:
+
+networks:
+  app-network:
+    driver: bridge
