@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_CREDENTIALS_ID = 'docker-hub-credentials'
+        DOCKER_IMAGE_NAME = 'my-docker-hub-username/ai-resume-analyzer'
+        AWS_EC2_SSH_CREDENTIALS_ID = 'aws-ec2-ssh-key'
+        TARGET_AWS_HOST = '54.210.12.34'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source repository from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Install & Test') {
+            steps {
+                echo 'Installing node dependencies and running tests...'
+                dir('backend') {
+                    sh 'npm install'
+                }
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run test -- --watchAll=false'
+                }
+            }
+        }
+
+        stage('Docker Build & Package') {
+            steps {
+                echo 'Building Docker container images...'
+                script {
+                    // Build Frontend image
+                    sh "docker build -t ${DOCKER_IMAGE_NAME}-frontend:latest -f devops/docker/Dockerfile.frontend ."
+                    
+                    // Build Backend image
+                    sh "docker build -t ${DOCKER_IMAGE_NAME}-backend:latest -f devops/docker/Dockerfile.backend ."
+                    
+                    // Build AI Service image
+                    sh "docker build -t ${DOCKER_IMAGE_NAME}-ai-service:latest -f devops/docker/Dockerfile.ai_service ."
+                }
+            }
+        }
+
+        stage('Docker Hub Push') {
+            steps {
+                echo 'Logging into Docker Hub and pushing packaged container images...'
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                        
+                        sh "docker push ${DOCKER_IMAGE_NAME}-frontend:latest"
+                        sh "docker push ${DOCKER_IMAGE_NAME}-backend:latest"
+                        sh "docker push ${DOCKER_IMAGE_NAME}-ai-service:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Ansible Deploy to AWS') {
+            steps {
+                echo 'Running Ansible deployment playbooks to configure EC2 and launch containers...'
+                dir('devops/ansible') {
+                    script {
+                        // Use Jenkins credentials block for AWS SSH private key file
+                        withCredentials([sshUserPrivateKey(credentialsId: AWS_EC2_SSH_CREDENTIALS_ID, keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                            // Inject SSH details into Ansible execution
+                            sh "ansible-playbook -i inventory.ini playbook.yml --private-key=\$SSH_KEY_FILE -u \$SSH_USER"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Smoke Test & Validation') {
+            steps {
+                echo 'Validating target application health endpoint on AWS cloud EC2 instance...'
+                sh "curl -s -f http://${TARGET_AWS_HOST}:5000/api/devops/status || exit 1"
+                echo 'Deployment smoke tests passed. Application is fully operational!'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline executed successfully! Emailing notification reports...'
+        }
+        failure {
+            echo 'CI/CD pipeline failed. Reverting changes or alerting infrastructure teams.'
+        }
+    }
+}

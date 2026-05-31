@@ -1,0 +1,82 @@
+---
+- name: Configure and Deploy AI Resume Analyzer on AWS EC2
+  hosts: webservers
+  become: yes
+  vars:
+    project_dir: /opt/ai_resume_analyzer
+    docker_image_prefix: "my-docker-hub-username/ai-resume-analyzer"
+
+  tasks:
+    - name: Update apt cache and install system dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - git
+        state: present
+        update_cache: yes
+
+    - name: Add Docker's official GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Set up Docker stable repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable
+        state: present
+
+    - name: Install Docker Engine & CLI
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is started and enabled
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v2.24.1/docker-compose-Linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create target project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy docker-compose.yml configuration to AWS server
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ project_dir }}/docker-compose.yml"
+        mode: '0644'
+
+    - name: Pull latest images from Docker Hub registry
+      docker_image:
+        name: "{{ item }}"
+        source: pull
+      loop:
+        - "{{ docker_image_prefix }}-frontend:latest"
+        - "{{ docker_image_prefix }}-backend:latest"
+        - "{{ docker_image_prefix }}-ai-service:latest"
+
+    - name: Re-create and restart container stack using docker-compose
+      shell: |
+        docker-compose down
+        docker-compose up -d
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Prune dangling images to conserve server storage
+      shell: "docker image prune -f"
