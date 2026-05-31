@@ -16,7 +16,7 @@
 
     - name: Install dependencies (RedHat/Amazon Linux)
       yum:
-        name: [curl, git]
+        name: [git]
         state: present
         update_cache: yes
       when: ansible_os_family == "RedHat"
@@ -78,13 +78,9 @@
         mode: '0644'
 
     - name: Pull latest images from Docker Hub registry
-      docker_image:
-        name: "{{ item }}"
-        source: pull
-      loop:
-        - "{{ docker_image_prefix }}-frontend:latest"
-        - "{{ docker_image_prefix }}-backend:latest"
-        - "{{ docker_image_prefix }}-ai-service:latest"
+      shell: docker-compose pull
+      args:
+        chdir: "{{ project_dir }}"
 
     - name: Re-create and restart container stack using docker-compose
       shell: |
