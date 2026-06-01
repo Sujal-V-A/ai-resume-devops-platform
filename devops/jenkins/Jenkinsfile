@@ -5,7 +5,7 @@ pipeline {
         DOCKER_HUB_CREDENTIALS_ID = 'docker-hub-credentials'
         DOCKER_IMAGE_NAME = 'sujalainapure/ai-resume-analyzer'
         AWS_EC2_SSH_CREDENTIALS_ID = 'aws-ec2-ssh-key'
-        TARGET_AWS_HOST = '32.199.181.234'
+        TARGET_AWS_HOST = '100.53.138.0'
     }
 
     stages {

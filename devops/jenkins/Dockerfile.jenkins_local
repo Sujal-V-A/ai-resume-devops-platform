@@ -33,3 +33,6 @@ RUN apt-get update && apt-get install -y ansible && \
 
 # Return to jenkins user
 USER jenkins
+
+# Copy initialization scripts to automatically configure admin and pipeline job
+COPY --chown=jenkins:jenkins devops/jenkins/init.groovy.d/ /usr/share/jenkins/ref/init.groovy.d/
