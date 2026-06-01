@@ -22,6 +22,8 @@ const RESUMES_DB = path.join(__dirname, 'database_resumes.json');
 const DEVOPS_CONFIG = path.join(__dirname, 'database_devops_config.json');
 
 // Initialize database files if they don't exist
+const AI_SERVICE_HOST = fs.existsSync('/.dockerenv') ? 'ai-service' : '127.0.0.1';
+
 if (!fs.existsSync(USERS_DB)) fs.writeFileSync(USERS_DB, JSON.stringify([]));
 if (!fs.existsSync(RESUMES_DB)) fs.writeFileSync(RESUMES_DB, JSON.stringify([]));
 if (!fs.existsSync(DEVOPS_CONFIG)) {
@@ -99,7 +101,7 @@ app.post('/api/resume/analyze', upload.single('file'), async (req, res) => {
         const form = new (require('form-data'))();
         form.append('file', fileStream, { filename: originalName, contentType: 'application/pdf' });
         
-        const aiServiceUrl = 'http://127.0.0.1:5050/analyze';
+        const aiServiceUrl = `http://${AI_SERVICE_HOST}:5050/analyze`;
         const response = await axios.post(aiServiceUrl, form, {
             headers: form.getHeaders(),
             maxContentLength: Infinity,
@@ -165,7 +167,7 @@ app.delete('/api/resume/:id', (req, res) => {
 
 app.post('/api/resume/compare', async (req, res) => {
     try {
-        const aiServiceUrl = 'http://127.0.0.1:5050/compare';
+        const aiServiceUrl = `http://${AI_SERVICE_HOST}:5050/compare`;
         const response = await axios.post(aiServiceUrl, req.body);
         res.json(response.data);
     } catch (error) {
@@ -176,7 +178,7 @@ app.post('/api/resume/compare', async (req, res) => {
 
 app.post('/api/resume/generate_summary', async (req, res) => {
     try {
-        const aiServiceUrl = 'http://127.0.0.1:5050/generate_summary';
+        const aiServiceUrl = `http://${AI_SERVICE_HOST}:5050/generate_summary`;
         const response = await axios.post(aiServiceUrl, req.body);
         res.json(response.data);
     } catch (error) {
@@ -187,7 +189,7 @@ app.post('/api/resume/generate_summary', async (req, res) => {
 
 app.post('/api/resume/parse_builder_summary', async (req, res) => {
     try {
-        const aiServiceUrl = 'http://127.0.0.1:5050/parse_builder_summary';
+        const aiServiceUrl = `http://${AI_SERVICE_HOST}:5050/parse_builder_summary`;
         const response = await axios.post(aiServiceUrl, req.body);
         res.json(response.data);
     } catch (error) {
@@ -198,7 +200,7 @@ app.post('/api/resume/parse_builder_summary', async (req, res) => {
 
 app.post('/api/resume/evaluate_answer', async (req, res) => {
     try {
-        const aiServiceUrl = 'http://127.0.0.1:5050/evaluate_answer';
+        const aiServiceUrl = `http://${AI_SERVICE_HOST}:5050/evaluate_answer`;
         const response = await axios.post(aiServiceUrl, req.body);
         res.json(response.data);
     } catch (error) {
@@ -253,7 +255,7 @@ app.get('/api/devops/status', async (req, res) => {
     // Check if Python Flask service is running
     let flaskStatus = 'offline';
     try {
-        const check = await axios.get('http://127.0.0.1:5050/health', { timeout: 1000 });
+        const check = await axios.get(`http://${AI_SERVICE_HOST}:5050/health`, { timeout: 1000 });
         if (check.data && check.data.status === 'healthy') {
             flaskStatus = 'online';
         }
