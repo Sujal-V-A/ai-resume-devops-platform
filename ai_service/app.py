@@ -15,10 +15,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Skill Definitions
 SKILLS_DICTIONARY = {
     'Frontend': ['react', 'angular', 'vue', 'html5', 'css3', 'javascript', 'typescript', 'tailwind', 'bootstrap', 'jquery', 'nextjs', 'vite'],
-    'Backend': ['node.js', 'nodejs', 'express', 'express.js', 'django', 'flask', 'spring boot', 'springboot', 'java', 'python', 'go', 'golang', 'php', 'ruby', 'c#', 'c++', 'asp.net'],
+    'Backend': ['node.js', 'nodejs', 'express', 'express.js', 'django', 'flask', 'spring boot', 'springboot', 'python', 'go', 'golang', 'php', 'ruby', 'c#', 'asp.net'],
     'Database': ['postgresql', 'postgres', 'mongodb', 'mysql', 'sqlite', 'redis', 'mariadb', 'cassandra', 'oracle', 'sql', 'nosql'],
     'DevOps': ['docker', 'kubernetes', 'k8s', 'jenkins', 'ansible', 'terraform', 'git', 'github', 'gitlab', 'ci/cd', 'cicd', 'maven', 'gradle', 'prometheus', 'grafana', 'nagios'],
-    'Cloud': ['aws', 'amazon web services', 'azure', 'gcp', 'google cloud', 'heroku', 'digitalocean', 'ec2', 's3', 'rds', 'lambda']
+    'Cloud': ['aws', 'amazon web services', 'azure', 'gcp', 'google cloud', 'heroku', 'digitalocean', 'ec2', 's3', 'rds', 'lambda'],
+    'Programming Skills': ['c', 'java', 'c++', 'pocd', 'dms']
 }
 
 # Job Roles Mapping
@@ -267,6 +268,7 @@ def generate_summary_text(name, skills_dict, recommended_roles, tone='profession
     backend_skills = skills_dict.get('Backend', [])
     frontend_skills = skills_dict.get('Frontend', [])
     database_skills = skills_dict.get('Database', [])
+    programming_skills = skills_dict.get('Programming Skills', [])
     
     # Select skills based on focus
     focused_skills = []
@@ -275,11 +277,11 @@ def generate_summary_text(name, skills_dict, recommended_roles, tone='profession
     elif focus == 'Frontend':
         focused_skills = frontend_skills
     elif focus == 'Backend':
-        focused_skills = backend_skills + database_skills
+        focused_skills = backend_skills + database_skills + programming_skills
     
     if not focused_skills:
         # Fallback to order: DevOps -> Cloud -> Backend -> Frontend
-        focused_skills = devops_skills + cloud_skills + backend_skills + frontend_skills
+        focused_skills = devops_skills + cloud_skills + backend_skills + frontend_skills + programming_skills
         
     focused_skills_str = ", ".join(focused_skills[:5]) if focused_skills else "software engineering methodologies"
     top_role = recommended_roles[0]['role'] if recommended_roles else "Software Engineer"
@@ -351,10 +353,14 @@ def parse_builder_summary_text(text):
     for category, skills in SKILLS_DICTIONARY.items():
         for skill in skills:
             pattern = r'\b' + re.escape(skill) + r'\b'
-            if skill in ['c++', 'c#', 'node.js', 'express.js']:
+            if skill == 'c':
+                pattern = r'\bc\b(?![+#])'
+            elif skill in ['c++', 'c#', 'node.js', 'express.js']:
                 pattern = re.escape(skill)
             if re.search(pattern, text_lower):
                 formatted = skill.upper() if len(skill) <= 4 else skill.title()
+                if skill == 'java':
+                    formatted = 'Java'
                 if formatted not in tech_skills:
                     tech_skills.append(formatted)
                     
@@ -569,7 +575,9 @@ def parse_resume(text, filename=""):
             # Word boundary matching or specific name formatting
             pattern = r'\b' + re.escape(skill) + r'\b'
             # special check for things like C++ or Node.js
-            if skill in ['c++', 'c#', 'node.js', 'express.js']:
+            if skill == 'c':
+                pattern = r'\bc\b(?![+#])'
+            elif skill in ['c++', 'c#', 'node.js', 'express.js']:
                 pattern = re.escape(skill)
             
             if re.search(pattern, lower_text):
@@ -583,6 +591,8 @@ def parse_resume(text, filename=""):
                     formatted_skill = 'HTML5'
                 elif skill == 'css3':
                     formatted_skill = 'CSS3'
+                elif skill == 'java':
+                    formatted_skill = 'Java'
                 
                 detected_skills[category].append(formatted_skill)
                 all_detected_skills_flat.append(skill)

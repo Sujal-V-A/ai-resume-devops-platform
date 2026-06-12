@@ -143,7 +143,8 @@ function App() {
       backend: '',
       database: '',
       devops: '',
-      cloud: ''
+      cloud: '',
+      programming: ''
     },
     softSkills: '',
     hobbies: '',
@@ -514,6 +515,7 @@ function App() {
     const databaseSkills = (detected.Database || []).join(', ');
     const devopsSkills = (detected.DevOps || []).join(', ');
     const cloudSkills = (detected.Cloud || []).join(', ');
+    const programmingSkills = (detected['Programming Skills'] || []).join(', ');
     
     const primaryRole = selectedResume.jobRecommendations && selectedResume.jobRecommendations[0]
       ? selectedResume.jobRecommendations[0].role
@@ -558,7 +560,8 @@ function App() {
         backend: backendSkills,
         database: databaseSkills,
         devops: devopsSkills,
-        cloud: cloudSkills
+        cloud: cloudSkills,
+        programming: programmingSkills
       }
     });
     
@@ -591,10 +594,11 @@ function App() {
         const updatedSkills = { ...prev.skills };
         const techSkillsMapping = {
           frontend: ['react', 'angular', 'vue', 'html5', 'css3', 'javascript', 'typescript', 'tailwind', 'bootstrap', 'jquery', 'nextjs', 'vite'],
-          backend: ['node.js', 'nodejs', 'express', 'express.js', 'django', 'flask', 'spring boot', 'springboot', 'java', 'python', 'go', 'golang', 'php', 'ruby', 'c#', 'c++', 'asp.net'],
+          backend: ['node.js', 'nodejs', 'express', 'express.js', 'django', 'flask', 'spring boot', 'springboot', 'python', 'go', 'golang', 'php', 'ruby', 'c#', 'asp.net'],
           database: ['postgresql', 'postgres', 'mongodb', 'mysql', 'sqlite', 'redis', 'mariadb', 'cassandra', 'oracle', 'sql', 'nosql'],
           devops: ['docker', 'kubernetes', 'k8s', 'jenkins', 'ansible', 'terraform', 'git', 'github', 'gitlab', 'ci/cd', 'cicd', 'maven', 'gradle', 'prometheus', 'grafana', 'nagios'],
-          cloud: ['aws', 'amazon web services', 'azure', 'gcp', 'google cloud', 'heroku', 'digitalocean', 'ec2', 's3', 'rds', 'lambda']
+          cloud: ['aws', 'amazon web services', 'azure', 'gcp', 'google cloud', 'heroku', 'digitalocean', 'ec2', 's3', 'rds', 'lambda'],
+          programming: ['c', 'java', 'c++', 'pocd', 'dms']
         };
         
         if (parsed.tech_skills && parsed.tech_skills.length > 0) {
@@ -836,7 +840,10 @@ function App() {
         doc.setFontSize(9.5);
         doc.setTextColor(0, 0, 0);
         // Format category name (e.g. frontend -> Frontend)
-        const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1) + ": ";
+        let categoryLabel = category.charAt(0).toUpperCase() + category.slice(1) + ": ";
+        if (category === 'programming') {
+          categoryLabel = 'Programming Skills: ';
+        }
         doc.text(categoryLabel, margin, y);
         const catWidth = doc.getTextWidth(categoryLabel);
         
@@ -3095,6 +3102,19 @@ function App() {
                         />
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label>Programming Skills (Comma separated)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="C, Java, C++, POCD, DMS"
+                          value={builderResumeData.skills.programming || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBuilderResumeData(prev => ({ ...prev, skills: { ...prev.skills, programming: val } }));
+                          }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
                         <label>Database Skills (Comma separated)</label>
                         <input
                           type="text"
@@ -3282,7 +3302,7 @@ function App() {
                         <div style={{ fontSize: '11.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {Object.entries(builderResumeData.skills).map(([category, skills]) => skills && skills.trim() && (
                             <div key={category}>
-                              <strong style={{ textTransform: 'capitalize' }}>{category}:</strong> {skills}
+                              <strong style={{ textTransform: 'capitalize' }}>{category === 'programming' ? 'programming skills' : category}:</strong> {skills}
                             </div>
                           ))}
                           {builderResumeData.softSkills && builderResumeData.softSkills.trim() && (
